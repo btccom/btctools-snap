@@ -1,0 +1,116 @@
+name: btctools
+version: '1.3.3'
+base: core18
+summary: An Antminer Management Tool
+description: |
+  A tool to scan, configure, reboot and upgrade almost all of Antminers.
+  It can also scan, configure and reboot some WhatsMiner or Avalon miner (cannot upgrade them).
+
+grade: stable
+confinement: strict
+icon: ./btctools-gui/res/img/btctools-logo.svg
+
+apps:
+  btctools:
+    command: bin/desktop-launch btctools-gui
+    desktop: usr/share/btctools/res/btctools.desktop
+    plugs:
+      - x11
+      - unity7
+      - network
+      - network-observe
+      - home
+      - desktop
+      - opengl
+
+parts:
+  # Remote part for support of various desktop technologies
+  # Refer: https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
+  desktop-qt5:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-depth: 1
+    source-subdir: qt
+    plugin: make
+    make-parameters: ["FLAVOR=qt5"]
+    build-packages:
+    - build-essential
+    - qtbase5-dev
+    - dpkg-dev
+    - qt5-default
+    stage-packages:
+    - libxkbcommon0
+    - ttf-ubuntu-font-family
+    - dmz-cursor-theme
+    - light-themes
+    - adwaita-icon-theme
+    - gnome-themes-standard
+    - shared-mime-info
+    - libqt5gui5
+    - libgtk2.0-0
+    - libgdk-pixbuf2.0-0
+    - libqt5svg5 # for loading icon themes which are svg
+    - libqt5sql5-sqlite # BTCTools use it
+    - try: [appmenu-qt5] # not available on core18
+    - locales-all
+    - xdg-user-dirs
+    - fcitx-frontend-qt5
+
+  libbtctools:
+    plugin: cmake
+    source: ./libbtctools
+    override-build: |
+      cd $SNAPCRAFT_PART_BUILD;
+      cmake -DCMAKE_BUILD_TYPE=Debug -DBTCTOOLS__LUA_TYPE=NORMAL -DBTCTOOLS__LIB_TYPE=STATIC $SNAPCRAFT_PART_SRC;
+      make install -j$(nproc);
+    build-packages:
+      - cmake
+      - build-essential
+      - liblua5.1-0-dev
+      - libcrypto++-dev
+      - libssl-dev
+      - libcurl4-openssl-dev
+      - libboost-regex-dev
+      - libboost-system-dev
+      - libboost-context-dev
+      - libboost-chrono-dev
+    stage-packages:
+      - liblua5.1-0
+      - libcrypto++6
+      - libssl1.1
+      - libcurl4
+      - libboost-regex1.65.1
+      - libboost-system1.65.1
+      - libboost-context1.65.1
+      - libboost-chrono1.65.1
+      
+  btctools-gui:
+    after:
+      - libbtctools
+      - desktop-qt5
+    plugin: qmake
+    source: ./btctools-gui
+    qt-version: qt5
+    project-files:
+      - btctools-gui.pro
+    override-build:
+      cd $SNAPCRAFT_PART_BUILD;
+      rm -rf ./res/scripts;
+      cp -rf /usr/local/share/btctools/lua/scripts ./res/;
+      qmake CONFIG+=debug ./btctools-gui.pro;
+      make -j$(nproc);
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/;
+      strip ./btctools-gui;
+      cp -f ./btctools-gui $SNAPCRAFT_PART_INSTALL/usr/bin/;
+      ldd ./btctools-gui;
+    build-environment:
+      - PLATFORM_NAME: linuxsnap-${SNAP_ARCH}
+      - LUA_INCLUDE_DIR: /usr/include/lua5.1
+
+  add-desktop:
+    after:
+      - libbtctools
+    plugin: nil
+    source: ./res
+    override-build:
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/btctools/res;
+      cp ./btctools.ico ./btctools.desktop $SNAPCRAFT_PART_INSTALL/usr/share/btctools/res;

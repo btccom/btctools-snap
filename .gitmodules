@@ -1,0 +1,6 @@
+[submodule "libbtctools"]
+	path = libbtctools
+	url = https://github.com/btccom/libbtctools.git
+[submodule "btctools-gui"]
+	path = btctools-gui
+	url = https://github.com/btccom/btctools-gui.git

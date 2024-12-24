@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Icon=/usr/share/btctools/res/btctools.ico
+Exec=desktop-launch btctools-gui
+Name=BTCTools
+GenericName=BTCTools for Linux
+Comment=From BTC.com

@@ -1,0 +1,13 @@
+build
+build*/
+.vscode
+
+/parts/
+/prime/
+/stage/
+
+*.snap
+*.snap-build.*
+*.xdelta*
+
+.DS_Store
